@@ -34,3 +34,12 @@
 @media(max-width:800px){.profile label{display:none}.profile{gap:7px}.profile select{max-width:110px}header>span{max-width:45%;line-height:1.6;font-size:8px}dialog{padding:25px}.modal-heading{gap:10px}.category-image-edit{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.category-photo{transition:none}}
 .category-photo{object-position:center top}
+
+/* Four choices, arranged in reading order: A/B above C/D. */
+#answers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:20px}
+#answers .answer{margin:0;min-width:0;min-height:106px;padding:16px 14px;align-items:center}
+#answers .answer-label{min-width:0}
+#answers .answer-trailing{display:none}
+#answers .answer.correct,#answers .answer.incorrect{padding-bottom:30px}
+#answers .answer.correct .answer-trailing,#answers .answer.incorrect .answer-trailing{display:block;position:absolute;bottom:9px;left:14px;right:14px;max-width:none;text-align:right}
+@media(max-width:480px){#answers{gap:10px}#answers .answer{min-height:112px;padding:12px 10px;gap:8px}#answers .answer-badge{flex-basis:28px;width:28px;height:28px;font-size:13px}#answers .answer-label{font-size:12px}#answers .answer.correct,#answers .answer.incorrect{padding-bottom:28px}}

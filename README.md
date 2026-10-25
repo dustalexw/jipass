@@ -18,6 +18,25 @@
 
 # jipass
 
+## Native Mac edition
+
+**[Download jipass 2.0.0 for Apple Silicon Macs](https://github.com/dustalexw/jipass/releases/latest)** · macOS 13+ · FFmpeg required
+
+jipass now includes a **native SwiftUI app** with the same listening-room style, 2×2 answer
+grid, automatic playback, local artwork reveals and library-based trivia. Python and a
+browser are not required for the native edition.
+
+```sh
+./Native/build.sh open
+```
+
+Requires macOS 13+, Xcode's Swift toolchain and FFmpeg. The first launch imports the existing
+library, profiles, completed scores and custom images without changing the old database.
+Native saves are separate from browser saves. See the [native guide](Native/README.md) for
+builds, migration, storage and tests (`./Native/test.sh`). The browser edition below remains
+available for compatibility.
+
+
 You know the opening riff. You know the voice. Can you name it before the clock runs out?
 
 **jipass** turns your own music collection into a music trivia game. Pick a genre or artist,
