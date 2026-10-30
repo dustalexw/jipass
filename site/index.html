@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>jipass: know your collection by heart</title>
+<meta name="description" content="jipass turns your own music collection into a trivia game. Hear a short clip, pick from four answers drawn from your library. Native Mac app, plus a browser edition.">
+<meta property="og:title" content="jipass">
+<meta property="og:description" content="Know your collection by heart. A few seconds, four answers, your entire music library.">
+<meta property="og:image" content="https://chaszel.com/jipass/icon.webp">
+<meta property="og:type" content="website">
+<link rel="icon" href="icon.webp" type="image/webp">
+<link rel="apple-touch-icon" href="icon.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: a cream "listening room" page in jipass's own colors (cream, forest green, record orange).
+   Hero with wordmark and a spinning record; a sample question card; feature list; two editions to
+   download (native Mac app and the browser edition); scoring; privacy; release notes from GitHub. */
+:root{
+  --cream:#f5f3ec; --paper:#fbfaf5; --rule:#dcded2;
+  --ink:#22271f; --muted:#6e7266;
+  --forest:#26372e; --groove:#52654b;
+  --orange:#e95e35; --orange-deep:#c94a25;
+  --sans:"Inter Tight","Helvetica Neue",Arial,system-ui,sans-serif;
+  --serif:"Instrument Serif",Georgia,"Times New Roman",serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{background:var(--cream)}
+body{margin:0;color:var(--ink);font:17px/1.6 var(--sans);background:var(--cream);overflow-x:hidden}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(22px,env(safe-area-inset-left,0px));padding-right:max(22px,env(safe-area-inset-right,0px))}
+a{color:var(--forest)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--orange);outline-offset:3px;border-radius:10px}
+.label{font:700 12px var(--sans);letter-spacing:.2em;text-transform:uppercase}
+
+/* top strip, like the README banner */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:18px;border-bottom:1px solid var(--rule)}
+.top .mini{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);font:800 18px var(--sans);letter-spacing:-.03em}
+.top .mini img{width:30px;height:30px;border-radius:8px}
+.top nav{display:flex;gap:20px;flex-wrap:wrap}
+.top nav a{color:var(--muted);text-decoration:none;font-weight:600;font-size:14px}
+.top nav a:hover{color:var(--ink)}
+
+/* hero */
+.hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:40px;align-items:center;padding-block:56px 40px}
+.hero .label{color:var(--muted);margin:0 0 18px}
+h1{margin:0;font:800 clamp(64px,11vw,132px)/.9 var(--sans);letter-spacing:-.04em}
+h1 .dot{color:var(--orange)}
+.big{margin:14px 0 0;font:400 clamp(30px,4.2vw,50px)/1.05 var(--sans);letter-spacing:-.035em}
+.big em{font:italic 400 1.22em/1 var(--serif);letter-spacing:-.01em}
+.sub{color:var(--muted);margin:18px 0 28px;font-size:18px;max-width:40ch}
+.dl{display:flex;flex-wrap:wrap;align-items:center;gap:14px 20px}
+.btn{display:inline-flex;align-items:center;gap:12px;text-decoration:none;color:var(--cream);font:700 18px var(--sans);
+  padding:15px 24px 15px 20px;border-radius:999px;background:var(--forest);box-shadow:0 10px 30px rgba(38,55,46,.25);transition:transform .15s,background .15s}
+.btn:hover{transform:translateY(-2px);background:#1d2b23}
+.btn .disc{width:30px;height:30px;border-radius:50%;background:radial-gradient(circle,var(--orange) 0 34%,var(--forest) 35% 100%);
+  box-shadow:0 0 0 1px var(--groove) inset,0 0 0 5px rgba(82,101,75,.0);flex:none;position:relative}
+.btn .disc::after{content:"";position:absolute;inset:13px;border-radius:50%;background:var(--cream)}
+.btn small{display:block;font:500 12px var(--sans);opacity:.8;margin-top:1px}
+.alt{font-size:15px;color:var(--muted);font-weight:500}
+.alt a{color:var(--ink);font-weight:700;text-decoration:none;border-bottom:2px solid var(--orange)}
+.ver{margin-top:14px;font-size:13px;color:var(--muted);font-weight:600}
+.ver b{color:var(--ink)}
+.note{display:none;margin-top:14px;font-size:14px;font-weight:600;background:var(--paper);border:1px solid var(--rule);border-radius:12px;padding:10px 14px;max-width:46ch}
+
+/* the record */
+.deck{position:relative;aspect-ratio:1;max-width:440px;width:100%;justify-self:center}
+.record{position:absolute;inset:0;border-radius:50%;background:
+  radial-gradient(circle,var(--orange) 0 17.5%,transparent 17.6%),
+  repeating-radial-gradient(circle,var(--forest) 0 5px,#2e4237 5px 6px),var(--forest);
+  box-shadow:0 30px 60px rgba(38,55,46,.28),0 0 0 6px var(--forest) inset;animation:spin 6s linear infinite}
+.deck .j{position:absolute;inset:0;display:grid;place-items:center;color:var(--cream);font:italic 400 clamp(70px,11vw,120px)/1 var(--serif);transform:translate(-2%,4%);pointer-events:none}
+.record::after{content:"";position:absolute;left:50%;top:50%;width:10px;height:10px;margin:-5px;border-radius:50%;background:var(--forest)}
+.deck .sleeve{position:absolute;right:0;bottom:2%;background:var(--paper);border:1px solid var(--rule);border-radius:14px;padding:12px 16px;box-shadow:0 12px 30px rgba(34,39,31,.12);font-size:14px;transform:rotate(2deg)}
+.deck .sleeve b{display:block;font:800 22px var(--sans);letter-spacing:-.03em;color:var(--orange)}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* sample question */
+.q{margin:10px 0 80px;background:var(--paper);border:1px solid var(--rule);border-radius:24px;padding:26px;display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:center}
+.q .clip{display:flex;flex-direction:column;align-items:center;gap:10px;min-width:150px}
+.q .clip .bars{display:flex;gap:4px;align-items:center;height:56px}
+.q .clip .bars i{width:6px;border-radius:3px;background:var(--forest);animation:bar 1.1s ease-in-out infinite}
+@keyframes bar{0%,100%{height:12px}50%{height:52px}}
+.q .clock{font:700 13px var(--mono);color:var(--muted)}
+.q .clock b{color:var(--orange)}
+.q h3{margin:0 0 4px;font:400 28px/1.1 var(--sans);letter-spacing:-.03em}
+.q h3 em{font:italic 400 1.15em var(--serif)}
+.q .hint{margin:0 0 16px;color:var(--muted);font-size:14px}
+.answers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.answers button{all:unset;cursor:pointer;display:flex;align-items:center;gap:12px;background:var(--cream);border:1.5px solid var(--rule);border-radius:14px;padding:13px 16px;font-weight:600;transition:border-color .15s,background .15s}
+.answers button:hover{border-color:var(--forest)}
+.answers button kbd{font:700 12px var(--mono);width:24px;height:24px;display:grid;place-items:center;border-radius:7px;background:var(--forest);color:var(--cream)}
+.answers button.right{background:#e3eadc;border-color:var(--groove)}
+.answers button.wrong{background:#f8e1d8;border-color:var(--orange)}
+.q .verdict{margin:12px 0 0;font-weight:700;min-height:1.6em}
+
+section{padding-block:0 84px}
+h2{margin:0 0 10px;font:400 clamp(34px,4.8vw,54px)/1 var(--sans);letter-spacing:-.045em}
+h2 em{font:italic 400 1.15em var(--serif);letter-spacing:-.01em}
+.lead{color:var(--muted);margin:0 0 30px;max-width:60ch;font-size:18px}
+.sec-label{color:var(--orange);margin:0 0 12px}
+
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--ink)}
+.feat{padding:22px 22px 26px 0;border-bottom:1px solid var(--rule);min-width:0}
+.feat:not(:nth-child(3n+1)){padding-left:22px;border-left:1px solid var(--rule)}
+.feat .n{font:700 12px var(--mono);color:var(--orange)}
+.feat h3{margin:6px 0 6px;font:700 19px/1.25 var(--sans);letter-spacing:-.02em}
+.feat p{margin:0;color:var(--muted);font-size:15.5px}
+
+.eds{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.ed{background:var(--paper);border:1px solid var(--rule);border-radius:24px;padding:26px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.ed.main{background:var(--forest);color:var(--cream);border-color:var(--forest)}
+.ed h3{margin:0;font:800 26px/1.1 var(--sans);letter-spacing:-.035em}
+.ed h3 em{font:italic 400 1.1em var(--serif);color:var(--orange);letter-spacing:0}
+.ed .tag{font:700 11px var(--sans);letter-spacing:.16em;text-transform:uppercase;opacity:.75}
+.ed ol{margin:0;padding-left:20px;font-size:15.5px}
+.ed ol li{margin:5px 0}
+.ed.main ol{color:#dfe4d9}
+.ed:not(.main) ol{color:var(--muted)}
+.ed ol b{color:inherit;font-weight:700}
+.ed.main ol b{color:var(--cream)}
+.ed .req{font-size:14px;opacity:.8;margin:0}
+.ed .get{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:10px;text-decoration:none;font-weight:700;border-radius:14px;padding:13px 16px}
+.ed.main .get{background:var(--orange);color:#fff}
+.ed.main .get:hover{background:var(--orange-deep)}
+.ed:not(.main) .get{border:1.5px solid var(--ink);color:var(--ink)}
+.ed:not(.main) .get:hover{background:var(--ink);color:var(--cream)}
+.ed .get span{font-weight:500;font-size:13px;opacity:.85}
+code.i{font:500 13px var(--mono);background:rgba(34,39,31,.07);border-radius:6px;padding:1px 6px}
+.ed.main code.i{background:rgba(245,243,236,.12);color:var(--cream)}
+pre.term{margin:0;font:500 13px/1.7 var(--mono);background:var(--forest);color:#e8ebe1;border-radius:12px;padding:12px 14px;overflow-x:auto}
+pre.term .c{color:#9fb092}
+
+.score{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:30px;align-items:center;border-top:1px solid var(--ink);border-bottom:1px solid var(--ink);padding-block:34px}
+.formula{font:500 clamp(16px,2vw,21px)/1.5 var(--mono);color:var(--forest)}
+.formula b{color:var(--orange)}
+.score ul{margin:0;padding-left:20px;color:var(--muted)}
+.score li{margin:6px 0}
+.score li b{color:var(--ink)}
+
+.priv{display:grid;grid-template-columns:auto 1fr;gap:26px;align-items:start;background:var(--paper);border:1px solid var(--rule);border-radius:24px;padding:28px}
+.priv .lock{width:64px;height:64px;border-radius:50%;background:var(--forest);display:grid;place-items:center}
+.priv .lock svg{width:28px;height:28px}
+.priv p{margin:0 0 10px;color:var(--muted)}
+.priv p b{color:var(--ink)}
+
+.notes{border-top:1px solid var(--ink);padding-top:22px}
+.notes h3{margin:0;font:800 24px var(--sans);letter-spacing:-.03em}
+.notes .when{color:var(--muted);font-size:14px;margin:4px 0 12px}
+.notes .body h4{font:700 16px var(--sans);margin:18px 0 6px}
+.notes .body ul,.notes .body ol{margin:0;padding-left:20px;color:var(--muted)}
+.notes .body li{margin:5px 0}
+.notes .body strong{color:var(--ink)}
+.notes .body code{font:500 13px var(--mono);background:rgba(34,39,31,.07);border-radius:6px;padding:1px 6px}
+.notes .more{display:inline-block;margin-top:16px;font-weight:700;text-decoration:none;border-bottom:2px solid var(--orange)}
+
+footer{border-top:1px solid var(--rule);color:var(--muted);font-size:13px}
+footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;padding-block:22px max(28px,env(safe-area-inset-bottom,0px))}
+footer .label{font-size:11px}
+footer a{color:var(--ink);font-weight:700;text-decoration:none}
+
+@media (max-width:880px){
+  .hero{grid-template-columns:1fr;padding-block:36px 30px}
+  .deck{max-width:300px;order:-1}
+  .q{grid-template-columns:1fr;gap:16px}
+  .q .clip{flex-direction:row;min-width:0}
+  .grid{grid-template-columns:1fr}
+  .feat,.feat:not(:nth-child(3n+1)){padding:20px 0;border-left:0}
+  .eds,.score{grid-template-columns:1fr}
+  .priv{grid-template-columns:1fr}
+  .top nav{display:none}
+}
+@media (max-width:520px){.answers{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.record,.q .clip .bars i{animation:none}.btn{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="mini" href="#"><img src="icon.webp" alt="">jipass</a>
+    <nav aria-label="Sections">
+      <a href="#how">How it plays</a>
+      <a href="#download">Download</a>
+      <a href="#new">What's new</a>
+      <a href="https://github.com/dustalexw/jipass">GitHub</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="hero">
+      <div>
+        <p class="label">Your music / your listening room</p>
+        <h1>jipass<span class="dot">.</span></h1>
+        <p class="big">Know your collection <em>by heart.</em></p>
+        <p class="sub">A few seconds. Four answers. Your entire music library. jipass turns the music you already own into a trivia game.</p>
+        <div class="dl">
+          <a class="btn" id="mainBtn" href="https://github.com/dustalexw/jipass/releases/download/v2.0.0/jipass-2.0.0-macOS-arm64.zip">
+            <span class="disc" aria-hidden="true"></span>
+            <span><span id="mainLabel">Download for Mac</span><small id="mainSub">Free · Apple silicon · macOS 13+</small></span>
+          </a>
+          <p class="alt">Windows, Linux or Intel? <a href="#download">Use the browser edition</a></p>
+        </div>
+        <p class="ver" id="ver">Latest release: <b>jipass 2.0.0</b></p>
+        <p class="note" id="phoneNote">jipass plays music from your computer. Open this page on your Mac or PC to get it.</p>
+      </div>
+      <div class="deck" aria-hidden="true">
+        <div class="record"></div><div class="j">j</div>
+        <div class="sleeve">Correct, in 2.1 s<b>+ 846</b></div>
+      </div>
+    </div>
+
+    <div class="q" id="how" role="group" aria-label="A sample jipass question">
+      <div class="clip" aria-hidden="true">
+        <div class="bars"><i style="animation-delay:-.1s"></i><i style="animation-delay:-.5s"></i><i style="animation-delay:-.3s"></i><i style="animation-delay:-.8s"></i><i style="animation-delay:-.2s"></i><i style="animation-delay:-.6s"></i><i style="animation-delay:-.4s"></i></div>
+        <span class="clock">clip playing · <b>0:06</b> left</span>
+      </div>
+      <div>
+        <h3>Who's <em>singing?</em></h3>
+        <p class="hint">A sample question. In the game the four answers come from your own library. Try it: click one, or press 1–4.</p>
+        <div class="answers" id="answers">
+          <button data-ok="0"><kbd>1</kbd>The Night Owls</button>
+          <button data-ok="1"><kbd>2</kbd>Marigold Avenue</button>
+          <button data-ok="0"><kbd>3</kbd>Paper Lanterns</button>
+          <button data-ok="0"><kbd>4</kbd>Southbound Static</button>
+        </div>
+        <p class="verdict" id="verdict" aria-live="polite"></p>
+      </div>
+    </div>
+
+    <section id="features">
+      <p class="label sec-label">Side A · What's in the sleeve</p>
+      <h2>Your collection is the <em>question bank.</em></h2>
+      <p class="lead">Point jipass at your music folders or a mounted NAS, pick a category, and press play.</p>
+      <div class="grid">
+        <article class="feat"><span class="n">01</span><h3>Bring your whole library</h3><p>Add several local or NAS folders. Rescans only look at files that changed. MP3, FLAC, M4A, Ogg, Opus, WAV, AIFF, ALAC, APE and more.</p></article>
+        <article class="feat"><span class="n">02</span><h3>Find your groove</h3><p>Play a genre, search for an artist, or shuffle everything. Genre rounds mix "who's the artist?" and "what's the song?"</p></article>
+        <article class="feat"><span class="n">03</span><h3>Four answers, all real</h3><p>Wrong answers come from your own library, from the same artist or genre where possible, so you can't guess by elimination.</p></article>
+        <article class="feat"><span class="n">04</span><h3>Fast ears win</h3><p>Clips start at a random point and play on their own. The clock only starts once the audio is actually playing.</p></article>
+        <article class="feat"><span class="n">05</span><h3>The big reveal</h3><p>After each guess: right or wrong, your speed bonus, your streak, and the album artwork from your files.</p></article>
+        <article class="feat"><span class="n">06</span><h3>Keep score</h3><p>Player profiles, history, accuracy, response times and personal bests, all saved on your computer.</p></article>
+      </div>
+    </section>
+
+    <section id="download">
+      <p class="label sec-label">Side B · Get it</p>
+      <h2>Two editions, <em>one game.</em></h2>
+      <p class="lead">Both need FFmpeg to play clips. Both keep your music, scores and settings on your own computer.</p>
+      <div class="eds">
+        <article class="ed main">
+          <span class="tag">Recommended on a Mac</span>
+          <h3>Native Mac app <em>2.0</em></h3>
+          <ol>
+            <li>Download and unzip, then move <b>jipass.app</b> to Applications.</li>
+            <li>Install FFmpeg if you don't have it: <code class="i">brew install ffmpeg</code></li>
+            <li>First launch: right-click the app and choose <b>Open</b>, since it isn't notarized.</li>
+            <li>Add your music folders and scan, or turn on <b>Demo</b> in Settings.</li>
+          </ol>
+          <p class="req">Apple silicon, macOS 13 or later. Coming from the browser edition? Your library, players and scores import on first launch.</p>
+          <a class="get" id="macGet" href="https://github.com/dustalexw/jipass/releases/download/v2.0.0/jipass-2.0.0-macOS-arm64.zip">Download jipass for Mac <span id="macSize">.zip · 0.8 MB</span></a>
+        </article>
+        <article class="ed">
+          <span class="tag">Windows, Linux, Intel Macs</span>
+          <h3>Browser edition</h3>
+          <ol>
+            <li>Install <b>Python 3.9+</b> and <b>FFmpeg</b> (with ffprobe) on your PATH.</li>
+            <li>Get the code and start it:</li>
+          </ol>
+<pre class="term">git clone https://github.com/dustalexw/jipass.git
+cd jipass
+python3 app.py      <span class="c"># Windows: py -3 app.py</span></pre>
+          <ol start="3">
+            <li>Open <b>127.0.0.1:8765</b> in your browser and add your music folders.</li>
+          </ol>
+          <p class="req">No accounts, no packages to install, nothing to build.</p>
+          <a class="get" href="https://github.com/dustalexw/jipass">Get the source on GitHub <span>dustalexw/jipass</span></a>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <p class="label sec-label">Scoring</p>
+      <div class="score">
+        <div>
+          <h2 style="margin-bottom:14px">Every second <em>counts.</em></h2>
+          <p class="formula"><b>500</b> + round(<b>500</b> × (1 − time ÷ clip length))</p>
+        </div>
+        <ul>
+          <li><b>Right answers</b> earn 500 points plus a speed bonus of up to 500 more.</li>
+          <li><b>Wrong answers and timeouts</b> earn zero.</li>
+          <li><b>Every round</b> ends with your accuracy, average response time, total score and personal best.</li>
+          <li><b>No repeats:</b> a track never comes up twice in the same round.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <div class="priv">
+        <div class="lock" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#f5f3ec" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
+        <div>
+          <h2 style="font-size:clamp(28px,3.6vw,40px);margin-bottom:12px">Your music <em>stays yours.</em></h2>
+          <p>Your music, folder paths, NAS sign-ins, scores and game history never leave your computer. There's no account and no tracking.</p>
+          <p><b>The one exception is artist photos:</b> jipass looks up artist names on Wikipedia, then keeps the photos and their credits on your computer. Album covers come only from your own files.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="new">
+      <p class="label sec-label">Liner notes</p>
+      <div class="notes">
+        <h3 id="relName">jipass 2.0 — Native Mac Edition</h3>
+        <p class="when" id="relWhen">Released October 25, 2026</p>
+        <div class="body" id="relBody">
+          <ul>
+            <li>jipass is now a native SwiftUI app for the Mac. No browser or Python needed.</li>
+            <li>The same cream, forest-green and orange listening room, with a 2×2 answer grid.</li>
+            <li>Imports your library, players, scores and custom images from the browser edition.</li>
+          </ul>
+        </div>
+        <a class="more" id="relLink" href="https://github.com/dustalexw/jipass/releases/latest">All releases on GitHub →</a>
+      </div>
+    </section>
+  </main>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span class="label">Built by dustalexw</span>
+    <span class="label">Press play. Trust your ears.</span>
+    <a href="https://github.com/dustalexw/jipass">Source on GitHub</a>
+  </div>
+</footer>
+
+<script>
+// ---- the sample question ----
+(()=>{const box=document.getElementById('answers'),v=document.getElementById('verdict'),btns=[...box.querySelectorAll('button')];let done=false;
+  function pick(b){if(done)return;done=true;btns.forEach(x=>{if(x.dataset.ok==='1')x.classList.add('right');});
+    if(b.dataset.ok==='1'){v.textContent='Correct! + 846 points for answering in 2.1 seconds.';}
+    else{b.classList.add('wrong');v.textContent='Not this time: it was Marigold Avenue. In the game, that one\'s from your own shelf.';}
+    setTimeout(()=>{done=false;btns.forEach(x=>x.classList.remove('right','wrong'));v.textContent='';},4500);}
+  btns.forEach(b=>b.addEventListener('click',()=>pick(b)));
+  addEventListener('keydown',e=>{if(/^[1-4]$/.test(e.key)&&!e.metaKey&&!e.ctrlKey&&!/INPUT|TEXTAREA/.test(document.activeElement.tagName)){const r=box.getBoundingClientRect();if(r.bottom>0&&r.top<innerHeight)pick(btns[+e.key-1]);}});})();
+
+// ---- phones: jipass runs on a computer ----
+const ua=navigator.userAgent,plat=(navigator.userAgentData&&navigator.userAgentData.platform)||navigator.platform||'';
+const phone=/iPhone|iPad|iPod|Android/i.test(ua)||(/Mac/.test(plat)&&navigator.maxTouchPoints>1);
+const isMac=!phone&&/Mac/i.test(plat+ua);
+if(phone)document.getElementById('phoneNote').style.display='block';
+if(!isMac&&!phone){const b=document.getElementById('mainBtn');b.href='#download';
+  document.getElementById('mainLabel').textContent='Get jipass';document.getElementById('mainSub').textContent='Free · Mac app or browser edition';}
+
+// ---- keep up with new releases ----
+function md(src){const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const inl=s=>esc(s).replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g,'<a href="$2">$1</a>');
+  let out='',list=null;const close=()=>{if(list){out+='</'+list+'>';list=null;}};
+  for(const raw of src.replace(/\r/g,'').split('\n')){const l=raw.trim();
+    if(/^#{1,6}\s/.test(l)){close();const t=l.replace(/^#{1,6}\s+/,'');if(/^(install|validation)/i.test(t))break;if(/^jipass/i.test(t))continue;out+='<h4>'+inl(t)+'</h4>';}
+    else if(/^[-*]\s+/.test(l)){if(list!=='ul'){close();out+='<ul>';list='ul';}out+='<li>'+inl(l.replace(/^[-*]\s+/,''))+'</li>';}
+    else if(/^\d+\.\s+/.test(l)){if(list!=='ol'){close();out+='<ol>';list='ol';}out+='<li>'+inl(l.replace(/^\d+\.\s+/,''))+'</li>';}
+    else if(l){close();out+='<p style="color:var(--muted);margin:6px 0">'+inl(l)+'</p>';}}
+  close();return out;}
+fetch('https://api.github.com/repos/dustalexw/jipass/releases/latest',{headers:{Accept:'application/vnd.github+json'}})
+  .then(r=>r.ok?r.json():Promise.reject(r.status)).then(rel=>{
+    const a=(rel.assets||[]).find(a=>/macOS.*\.zip$/i.test(a.name));
+    const v=(rel.tag_name||'').replace(/^v/,'');
+    if(a){document.getElementById('macGet').href=a.browser_download_url;
+      document.getElementById('macSize').textContent='.zip · '+(a.size/1048576).toFixed(1)+' MB';
+      if(isMac)document.getElementById('mainBtn').href=a.browser_download_url;}
+    if(v)document.getElementById('ver').innerHTML='Latest release: <b>jipass '+v+'</b>';
+    if(rel.name)document.getElementById('relName').textContent=rel.name;
+    if(rel.published_at)document.getElementById('relWhen').textContent='Released '+new Date(rel.published_at).toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});
+    if(rel.body){const h=md(rel.body);if(h.trim())document.getElementById('relBody').innerHTML=h;}
+    if(rel.html_url)document.getElementById('relLink').href=rel.html_url;
+  }).catch(()=>{/* offline or rate-limited: the built-in 2.0.0 links still work */});
+</script>
+</body>
+</html>
